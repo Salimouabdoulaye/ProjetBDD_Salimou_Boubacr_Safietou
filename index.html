@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Réservations de Salles</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- FullCalendar CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#" onclick="showSection('dashboard')">
+                <i class="fas fa-building"></i> Réservation Salles
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showSection('dashboard')">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('reservations')">
+                            <i class="fas fa-calendar-alt"></i> Réservations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('calendar')">
+                            <i class="fas fa-calendar"></i> Calendrier
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('salles')">
+                            <i class="fas fa-door-open"></i> Salles
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> <span id="currentUser">Amadou Diop</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> Profil</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3">
+                <div class="sidebar">
+                    <h5><i class="fas fa-bolt"></i> Actions rapides</h5>
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showNewReservationModal()">
+                                <i class="fas fa-plus"></i> Nouvelle réservation
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="filterReservations('En_Attente')">
+                                <i class="fas fa-clock"></i> En attente
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="filterReservations('Validee')">
+                                <i class="fas fa-check"></i> Validées
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="exportData()">
+                                <i class="fas fa-download"></i> Exporter PDF
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="app.printReservations()">
+                                <i class="fas fa-print"></i> Imprimer
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <h5><i class="fas fa-chart-pie"></i> Statistiques</h5>
+                    <div class="stat-card bg-primary text-center">
+                        <h6><i class="fas fa-calendar-check"></i> Aujourd'hui</h6>
+                        <h4 id="todayReservations">5</h4>
+                        <small>réservations</small>
+                    </div>
+                    <div class="stat-card bg-success text-center">
+                        <h6><i class="fas fa-percentage"></i> Taux validation</h6>
+                        <h4 id="validationRate">87%</h4>
+                        <small>ce mois</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="content-section">
+                    <div class="row mb-4">
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card">
+                                <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                <h3 id="totalReservations">24</h3>
+                                <p class="mb-0">Réservations totales</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card bg-success">
+                                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                <h3 id="validatedReservations">18</h3>
+                                <p class="mb-0">Validées</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card bg-warning">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                <h3 id="pendingReservations">4</h3>
+                                <p class="mb-0">En attente</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card bg-danger">
+                                <i class="fas fa-times-circle fa-2x mb-2"></i>
+                                <h3 id="rejectedReservations">2</h3>
+                                <p class="mb-0">Refusées</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Reservations -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-list"></i> Réservations récentes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Salle</th>
+                                            <th>Horaire</th>
+                                            <th>Objet</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentReservationsTable">
+                                        <!-- Data will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reservations Section -->
+                <div id="reservations-section" class="content-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Gestion des réservations</h5>
+                            <button class="btn btn-success" onclick="showNewReservationModal()">
+                                <i class="fas fa-plus"></i> Nouvelle réservation
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <select class="form-control" id="statusFilter" onchange="applyFilters()">
+                                        <option value="">Tous les statuts</option>
+                                        <option value="En_Attente">En attente</option>
+                                        <option value="Validee">Validée</option>
+                                        <option value="Refusee">Refusée</option>
+                                        <option value="Annulee">Annulée</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-control" id="salleFilter" onchange="applyFilters()">
+                                        <option value="">Toutes les salles</option>
+                                        <!-- Options will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" class="form-control" id="dateFilter" onchange="applyFilters()">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="searchFilter" placeholder="Rechercher..." onkeyup="applyFilters()">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Utilisateur</th>
+                                            <th>Date</th>
+                                            <th>Horaire</th>
+                                            <th>Salle</th>
+                                            <th>Objet</th>
+                                            <th>Type</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reservationsTable">
+                                        <!-- Data will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Section -->
+                <div id="calendar-section" class="content-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-calendar"></i> Calendrier des réservations</h5>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-light btn-sm" onclick="calendarManager?.exportCalendar()" data-bs-toggle="tooltip" title="Exporter calendrier">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-light btn-sm" onclick="calendarManager?.exportToICal()" data-bs-toggle="tooltip" title="Exporter iCal">
+                                    <i class="fas fa-calendar-download"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-light btn-sm" onclick="calendarManager?.refreshEvents()" data-bs-toggle="tooltip" title="Actualiser">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="calendar-container">
+                                <div id="calendar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salles Section -->
+                <div id="salles-section" class="content-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-door-open"></i> Gestion des salles</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="sallesGrid">
+                                <!-- Data will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- New Reservation Modal -->
+    <div class="modal fade" id="newReservationModal" tabindex="-1" aria-labelledby="newReservationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newReservationModalLabel">
+                        <i class="fas fa-plus"></i> Nouvelle réservation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="newReservationForm" novalidate>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="reservationSalle" class="form-label">
+                                    <i class="fas fa-door-open"></i> Salle *
+                                </label>
+                                <select class="form-control" id="reservationSalle" required>
+                                    <option value="">Sélectionner une salle</option>
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner une salle.
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="reservationTypeEvent" class="form-label">
+                                    <i class="fas fa-tag"></i> Type d'événement *
+                                </label>
+                                <select class="form-control" id="reservationTypeEvent" required>
+                                    <option value="">Sélectionner un type</option>
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner un type d'événement.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="reservationDate" class="form-label">
+                                    <i class="fas fa-calendar"></i> Date *
+                                </label>
+                                <input type="date" class="form-control" id="reservationDate" required>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner une date.
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="reservationHeureDebut" class="form-label">
+                                    <i class="fas fa-clock"></i> Heure début *
+                                </label>
+                                <input type="time" class="form-control" id="reservationHeureDebut" required>
+                                <div class="invalid-feedback">
+                                    Veuillez indiquer l'heure de début.
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="reservationHeureFin" class="form-label">
+                                    <i class="fas fa-clock"></i> Heure fin *
+                                </label>
+                                <input type="time" class="form-control" id="reservationHeureFin" required>
+                                <div class="invalid-feedback">
+                                    Veuillez indiquer l'heure de fin.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reservationObjet" class="form-label">
+                                <i class="fas fa-edit"></i> Objet de la réservation *
+                            </label>
+                            <input type="text" class="form-control" id="reservationObjet" maxlength="100" required 
+                                   placeholder="Ex: Réunion équipe marketing">
+                            <div class="invalid-feedback">
+                                Veuillez indiquer l'objet de la réservation.
+                            </div>
+                            <div class="form-text">Maximum 100 caractères</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reservationCommentaires" class="form-label">
+                                <i class="fas fa-comment"></i> Commentaires
+                            </label>
+                            <textarea class="form-control" id="reservationCommentaires" rows="3" maxlength="500" 
+                                      placeholder="Informations complémentaires (optionnel)"></textarea>
+                            <div class="form-text">Maximum 500 caractères</div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Les réservations nécessitant une validation seront soumises pour approbation.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="submitNewReservation()">
+                        <i class="fas fa-save"></i> Créer la réservation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Modal -->
+    <div class="modal fade" id="validationModal" tabindex="-1" aria-labelledby="validationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="validationModalLabel">
+                        <i class="fas fa-gavel"></i> Validation de réservation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="validationDetails"></div>
+                    <div class="mb-3">
+                        <label for="validationComments" class="form-label">
+                            <i class="fas fa-comment-dots"></i> Commentaires
+                        </label>
+                        <textarea class="form-control" id="validationComments" rows="3" 
+                                  placeholder="Commentaires sur la décision (optionnel)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="processValidation(false)">
+                        <i class="fas fa-times-circle"></i> Refuser
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="processValidation(true)">
+                        <i class="fas fa-check-circle"></i> Approuver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <div>Traitement en cours...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" style="position: fixed; top: 80px; right: 20px; z-index: 1060; max-width: 400px;"></div>
+
+    <!-- Back to Top Button -->
+    <button type="button" class="btn btn-primary btn-floating btn-lg" id="btn-back-to-top" 
+            style="position: fixed; bottom: 20px; right: 20px; display: none; z-index: 1050;" 
+            onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Scripts -->
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- FullCalendar JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+    
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="js/app.js"></script>
+    <script src="js/calendar.js"></script>
+
+    <!-- Additional functionality -->
+    <script>
+        // Show/hide back to top button
+        window.addEventListener('scroll', function() {
+            const backToTopButton = document.getElementById('btn-back-to-top');
+            if (window.pageYOffset > 300) {
+                backToTopButton.style.display = 'block';
+            } else {
+                backToTopButton.style.display = 'none';
+            }
+        });
+
+        // Auto-hide alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Form validation styling
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+
+            // Character counter for textareas
+            const textareas = document.querySelectorAll('textarea[maxlength]');
+            textareas.forEach(textarea => {
+                const maxLength = textarea.getAttribute('maxlength');
+                const counter = document.createElement('div');
+                counter.className = 'form-text text-end';
+                counter.innerHTML = `<span class="char-count">0</span>/${maxLength} caractères`;
+                textarea.parentNode.appendChild(counter);
+
+                textarea.addEventListener('input', function() {
+                    const charCount = this.value.length;
+                    const charCountSpan = counter.querySelector('.char-count');
+                    charCountSpan.textContent = charCount;
+                    
+                    if (charCount > maxLength * 0.9) {
+                        charCountSpan.className = 'char-count text-warning';
+                    } else if (charCount === maxLength) {
+                        charCountSpan.className = 'char-count text-danger';
+                    } else {
+                        charCountSpan.className = 'char-count';
+                    }
+                });
+            });
+
+            // Auto-resize textareas
+            const autoResizeTextareas = document.querySelectorAll('textarea');
+            autoResizeTextareas.forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight) + 'px';
+                });
+            });
+
+            // Keyboard shortcuts help
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    showKeyboardShortcuts();
+                }
+            });
+
+            // Service Worker registration (for offline capabilities)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                }).catch(function(err) {
+                    console.log('ServiceWorker registration failed');
+                });
+            }
+        });
+
+        // Keyboard shortcuts help modal
+        function showKeyboardShortcuts() {
+            const shortcuts = `
+                <div class="modal fade" id="shortcutsModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-keyboard"></i> Raccourcis clavier</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <table class="table table-sm">
+                                    <tr><td><kbd>Ctrl+N</kbd></td><td>Nouvelle réservation</td></tr>
+                                    <tr><td><kbd>Ctrl+E</kbd></td><td>Exporter PDF</td></tr>
+                                    <tr><td><kbd>Ctrl+1</kbd></td><td>Dashboard</td></tr>
+                                    <tr><td><kbd>Ctrl+2</kbd></td><td>Réservations</td></tr>
+                                    <tr><td><kbd>Ctrl+3</kbd></td><td>Calendrier</td></tr>
+                                    <tr><td><kbd>Ctrl+4</kbd></td><td>Salles</td></tr>
+                                    <tr><td><kbd>F1</kbd></td><td>Aide (cette fenêtre)</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', shortcuts);
+            new bootstrap.Modal(document.getElementById('shortcutsModal')).show();
+        }
+
+        // Performance monitoring
+        window.addEventListener('load', function() {
+            const loadTime = performance.now();
+            console.log(`⏱️ Application chargée en ${Math.round(loadTime)}ms`);
+            
+            // Log performance metrics
+            if ('performance' in window && 'getEntriesByType' in performance) {
+                const navigation = performance.getEntriesByType('navigation')[0];
+                console.log('📊 Métriques de performance:', {
+                    'DNS': Math.round(navigation.domainLookupEnd - navigation.domainLookupStart),
+                    'TCP': Math.round(navigation.connectEnd - navigation.connectStart),
+                    'Réponse': Math.round(navigation.responseEnd - navigation.requestStart),
+                    'DOM': Math.round(navigation.domContentLoadedEventEnd - navigation.navigationStart),
+                    'Chargement': Math.round(navigation.loadEventEnd - navigation.navigationStart)
+                });
+            }
+        });
+
+        // Error tracking
+        window.addEventListener('error', function(e) {
+            console.error('Erreur JavaScript:', e.error);
+            if (window.app) {
+                window.app.showAlert('Une erreur inattendue s\'est produite. Veuillez rafraîchir la page.', 'danger');
+            }
+        });
+
+        // Unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Promise rejetée:', e.reason);
+            e.preventDefault();
+        });
+
+        // Online/Offline status
+        window.addEventListener('online', function() {
+            if (window.app) {
+                window.app.showAlert('Connexion Internet rétablie', 'success');
+            }
+        });
+
+        window.addEventListener('offline', function() {
+            if (window.app) {
+                window.app.showAlert('Connexion Internet perdue. Mode hors ligne activé.', 'warning', 10000);
+            }
+        });
+
+        // Prevent form submission on Enter in search fields
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.type === 'search') {
+                e.preventDefault();
+            }
+        });
+
+        // Auto-save draft functionality (simulation)
+        let autoSaveTimer;
+        function setupAutoSave() {
+            const form = document.getElementById('newReservationForm');
+            if (!form) return;
+
+            const inputs = form.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = setTimeout(() => {
+                        console.log('💾 Sauvegarde automatique du brouillon...');
+                        // In real app, save to localStorage or send to server
+                    }, 2000);
+                });
+            });
+        }
+
+        // Print styles
+        window.addEventListener('beforeprint', function() {
+            document.body.classList.add('printing');
+        });
+
+        window.addEventListener('afterprint', function() {
+            document.body.classList.remove('printing');
+        });
+
+        // Version check (simulation)
+        function checkForUpdates() {
+            console.log('🔄 Vérification des mises à jour...');
+            // In real app, check version from server
+        }
+
+        // Check for updates every 30 minutes
+        setInterval(checkForUpdates, 30 * 60 * 1000);
+    </script>
+
+    <!-- Analytics and tracking (simulation) -->
+    <script>
+        // Google Analytics simulation
+        function gtag() {
+            console.log('📈 Analytics event:', arguments);
+        }
+        
+        // Track page views
+        gtag('config', 'GA_MEASUREMENT_ID', {
+            page_title: 'Gestion Réservations Salles',
+            page_location: window.location.href
+        });
+        
+        // Track user interactions
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('button[onclick], a[onclick]')) {
+                gtag('event', 'click', {
+                    event_category: 'interaction',
+                    event_label: e.target.textContent.trim()
+                });
+            }
+        });
+    </script>
+</body>
+</html>
